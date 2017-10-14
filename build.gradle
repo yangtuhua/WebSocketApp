@@ -14,10 +14,43 @@ buildscript {
 
 allprojects {
     repositories {
+        maven { url "https://jitpack.io" }
         jcenter()
     }
 }
 
 task clean(type: Delete) {
     delete rootProject.buildDir
+}
+ext {
+    minSdkVersion = 14
+    targetSdkVersion = 26
+    compileSdkVersion = 26
+    buildToolsVersion = '26.0.0'
+
+    supportVersion = '25.3.1'
+//    supportVersion = '26.0.0-alpha1'
+    contraintLayoutVersion = '1.0.2'
+    junitVersion = '4.12'
+    retrofitVersion = '2.3.0'
+    loggingVersion = '3.4.1'
+    rxjavaVersion = '2.1.2'
+    rxAndroidVersion = '2.0.1'
+    glideVersion = '3.8.0'
+    daggerVersion = '2.11'
+    butterknifeVersion = '8.8.0'
+    eventBusVersion = '3.0.0'
+    loggerVersion = '2.1.1'
+    permissionVersion = '0.4.3'
+    siwpeLayoutVersion = '1.2.0@aar'
+    matisseVersion = '0.4.3'
+    smartRefreshVersion = '1.0.3'
+    recyclerViewAdapterVersion = '2.9.27'
+    stethoVersion = '1.5.0'
+    utilVersion = '1.9.0'
+    leakCanaryVersion = '1.5.2'
+    multidexVersion = '1.0.1'
+    zxingVersion = '3.3.0'
+    photoViewVersion = '2.0.0'
+    flowlayoutVersion = '1.1.1'
 }

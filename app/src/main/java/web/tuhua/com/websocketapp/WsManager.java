@@ -19,7 +19,6 @@ import java.util.Map;
 
 public class WsManager {
     private static WsManager mInstance;
-    private final String TAG = this.getClass().getSimpleName();
 
     /**
      * WebSocket config
@@ -29,7 +28,6 @@ public class WsManager {
     private static final String DEF_TEST_URL = "ws://push.mysise.org/websocket";//测试服默认地址
     private static final String DEF_RELEASE_URL = "ws://push.mysise.org/websocket";//正式服默认地址
     private static final String DEF_URL = BuildConfig.DEBUG ? DEF_TEST_URL : DEF_RELEASE_URL;
-    private String url;
 
     private WsStatus mStatus;
     private WebSocket ws;
@@ -57,7 +55,7 @@ public class WsManager {
              * 每次app启动的时候会拿当前时间与缓存时间比较,超过6小时就再次去服务端获取新的连接地址更新本地缓存
              */
             String configUrl = "";
-            url = TextUtils.isEmpty(configUrl) ? DEF_URL : configUrl;
+            String url = TextUtils.isEmpty(configUrl) ? DEF_URL : configUrl;
             ws = new WebSocketFactory().createSocket(url, CONNECT_TIMEOUT)
                     .setFrameQueueSize(FRAME_QUEUE_SIZE)//设置帧队列最大值为5
                     .setMissingCloseFrameAllowed(false)//设置不允许服务端关闭连接却未发送关闭帧
@@ -84,7 +82,6 @@ public class WsManager {
             super.onTextMessage(websocket, text);
             Log.e("info", text);
         }
-
 
         @Override
         public void onConnected(WebSocket websocket, Map<String, List<String>> headers)
