@@ -2,6 +2,7 @@ package web.tuhua.com.websocketapp.dagger.module;
 
 import android.support.annotation.NonNull;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
@@ -23,6 +24,7 @@ import javax.net.ssl.X509TrustManager;
 
 import dagger.Module;
 import dagger.Provides;
+import okhttp3.Cache;
 import okhttp3.CipherSuite;
 import okhttp3.Cookie;
 import okhttp3.CookieJar;
@@ -36,6 +38,7 @@ import web.tuhua.com.websocketapp.BuildConfig;
 import web.tuhua.com.websocketapp.dagger.qualifiter.EntUrl;
 import web.tuhua.com.websocketapp.http.CookieHolder;
 import web.tuhua.com.websocketapp.http.EntApi;
+import web.tuhua.com.websocketapp.http.HttpCacheInterceptor;
 import web.tuhua.com.websocketapp.http.HttpConfig;
 import web.tuhua.com.websocketapp.http.ParamsInterceptor;
 
@@ -82,14 +85,14 @@ public class HttpModule {
         }
 
         //缓存
-//        File cacheFile = new File(HttpConfig.DEFAULT_REQUEST_CACHE_PATH);
-//        final Cache cache = new Cache(cacheFile, HttpConfig.MAX_CACHE_SIZE);
-//        HttpCacheInterceptor cacheInterceptor = new HttpCacheInterceptor();
-//        builder.cache(cache);
-//
-//        builder.interceptors().add(cacheInterceptor);//添加本地缓存拦截器，用来拦截本地缓存
-//        builder.addNetworkInterceptor(cacheInterceptor);
-//        builder.networkInterceptors().add(cacheInterceptor);//添加网络拦截器，用来拦截网络数据
+        File cacheFile = new File(HttpConfig.DEFAULT_REQUEST_CACHE_PATH);
+        final Cache cache = new Cache(cacheFile, HttpConfig.MAX_CACHE_SIZE);
+        HttpCacheInterceptor cacheInterceptor = new HttpCacheInterceptor();
+        builder.cache(cache);
+
+        builder.interceptors().add(cacheInterceptor);//添加本地缓存拦截器，用来拦截本地缓存
+        builder.addNetworkInterceptor(cacheInterceptor);
+        builder.networkInterceptors().add(cacheInterceptor);//添加网络拦截器，用来拦截网络数据
         builder.addInterceptor(new ParamsInterceptor());//自定义拦截器,用于添加功能参数requestType = app
 
         //cookie持久化

@@ -37,7 +37,7 @@ public class WSApplication extends Application {
         super.onCreate();
 
         mInstance = this;
-        initActiveAndroid();
+//        initActiveAndroid();
 
         Utils.init(this);
     }

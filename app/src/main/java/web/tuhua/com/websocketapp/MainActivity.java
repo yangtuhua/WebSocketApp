@@ -74,7 +74,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
 
         connectToServer();
 
-//        getHistory();
+        getHistory();
     }
 
     @AfterPermissionGranted(REQUEST_GET_PERMISSION)
