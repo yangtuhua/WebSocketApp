@@ -44,4 +44,20 @@ dependencies {
     compile(name: 'activeAndroidLibrary-release', ext: 'aar')
     compile "io.reactivex.rxjava2:rxjava:$rootProject.ext.rxjavaVersion"
     compile "io.reactivex.rxjava2:rxandroid:$rootProject.ext.rxAndroidVersion"
+
+    //retrofit
+    compile "com.squareup.retrofit2:retrofit:$rootProject.ext.retrofitVersion"
+    compile "com.squareup.retrofit2:converter-gson:$rootProject.ext.retrofitVersion"
+    compile "com.squareup.retrofit2:adapter-rxjava2:$rootProject.ext.retrofitVersion"
+    compile "com.squareup.okhttp3:logging-interceptor:$rootProject.ext.loggingVersion"
+    //rxjava
+    compile "io.reactivex.rxjava2:rxjava:$rootProject.ext.rxjavaVersion"
+    compile "io.reactivex.rxjava2:rxandroid:$rootProject.ext.rxAndroidVersion"
+    //dagger2
+    compile "com.google.dagger:dagger:$rootProject.ext.daggerVersion"
+    annotationProcessor "com.google.dagger:dagger-compiler:$rootProject.ext.daggerVersion"
+    //工具类
+    compile "com.blankj:utilcode:$rootProject.ext.utilVersion"
+    //下拉刷新库
+    compile "com.scwang.smartrefresh:SmartRefreshLayout:$rootProject.ext.smartRefreshVersion"
 }

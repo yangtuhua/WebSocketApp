@@ -5,15 +5,37 @@ import android.app.NotificationManager;
 import android.content.Context;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.widget.DividerItemDecoration;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 
+import com.blankj.utilcode.util.LogUtils;
+import com.blankj.utilcode.util.TimeUtils;
+import com.chad.library.adapter.base.BaseQuickAdapter;
+import com.chad.library.adapter.base.BaseViewHolder;
+import com.scwang.smartrefresh.layout.api.RefreshLayout;
+import com.scwang.smartrefresh.layout.listener.OnLoadmoreListener;
+import com.scwang.smartrefresh.layout.listener.OnRefreshListener;
+
 import org.java_websocket.client.WebSocketClient;
 import org.java_websocket.handshake.ServerHandshake;
 
 import java.net.URI;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+
+import io.reactivex.android.schedulers.AndroidSchedulers;
+import io.reactivex.functions.Consumer;
+import io.reactivex.schedulers.Schedulers;
+import web.tuhua.com.websocketapp.http.FeedResult;
+import web.tuhua.com.websocketapp.http.PagerResult;
+import web.tuhua.com.websocketapp.http.RetrofitHelper;
+
 
 public class MainActivity extends AppCompatActivity {
 
@@ -25,13 +47,100 @@ public class MainActivity extends AppCompatActivity {
 
     private int tryConnectCount;//已经尝试连接的次数
     private NotificationManager mNotificationManager;
+    private RetrofitHelper retrofitHelper;
+
+    private int currentPage = 1;
+
+    private static final int pageSize = 15;
+    private RecyclerView recyclerView;
+    private RefreshLayout refreshLayout;
+    private boolean isRefresh;
+    private long total;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        initView();
+
         connectToServer();
+
+        getHistory();
+    }
+
+    private void initView() {
+        refreshLayout = (RefreshLayout) findViewById(R.id.refreshLayout);
+        recyclerView = (RecyclerView) findViewById(R.id.recyclerview);
+        refreshLayout.setOnRefreshListener(new OnRefreshListener() {
+            @Override
+            public void onRefresh(RefreshLayout refreshlayout) {
+                refreshlayout.finishRefresh(0);
+                isRefresh = true;
+                currentPage = 1;
+                getHistory();
+            }
+        });
+        refreshLayout.setOnLoadmoreListener(new OnLoadmoreListener() {
+            @Override
+            public void onLoadmore(RefreshLayout refreshlayout) {
+                isRefresh = false;
+                if (total <= pageSize * currentPage) {
+                    Toast.makeText(MainActivity.this, "没有更多了", Toast.LENGTH_LONG).show();
+                } else {
+                    currentPage++;
+                    getHistory();
+                }
+                refreshlayout.finishLoadmore(0);
+            }
+        });
+    }
+
+    private void getHistory() {
+        if (retrofitHelper == null) {
+            retrofitHelper = WSApplication.getApplicationComponent().getRetrofitHelper();
+        }
+
+        retrofitHelper.getHistory().subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).subscribe(new Consumer<FeedResult<PagerResult<MsgBean>>>() {
+            @Override
+            public void accept(FeedResult<PagerResult<MsgBean>> pagerResultFeedResult) throws Exception {
+                total = pagerResultFeedResult.getResult().getTotalRow();
+
+                showMsgList(pagerResultFeedResult.getResult().getList());
+            }
+        }, new Consumer<Throwable>() {
+            @Override
+            public void accept(Throwable throwable) throws Exception {
+                LogUtils.e("出错了：" + throwable);
+            }
+        });
+    }
+
+    private BaseQuickAdapter<MsgBean, BaseViewHolder> commonAdapter;
+
+    private void showMsgList(List<MsgBean> list) {
+
+        if (commonAdapter == null) {
+            commonAdapter = new BaseQuickAdapter<MsgBean, BaseViewHolder>(R.layout.item_msg, list) {
+                @Override
+                protected void convert(BaseViewHolder baseViewHolder, MsgBean msgBean) {
+                    baseViewHolder.setText(R.id.tv_content, msgBean.getMsg());
+
+                    String dateStr = TimeUtils.date2String(new Date(msgBean.getCreat_time()), new SimpleDateFormat("MM-dd HH:mm"));
+                    baseViewHolder.setText(R.id.tv_time, dateStr);
+                }
+            };
+            recyclerView.setAdapter(commonAdapter);
+            recyclerView.setLayoutManager(new LinearLayoutManager(this));
+            recyclerView.addItemDecoration(new DividerItemDecoration(this, RecyclerView.VERTICAL));
+        } else {
+            if (isRefresh) {
+                commonAdapter.setNewData(list);
+            } else {
+                commonAdapter.addData(list);
+            }
+        }
     }
 
     @Override
