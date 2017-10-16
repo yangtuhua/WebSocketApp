@@ -1,8 +1,12 @@
 package web.tuhua.com.websocketapp.http;
 
 
+import java.util.Map;
+
 import io.reactivex.Observable;
-import retrofit2.http.GET;
+import retrofit2.http.FieldMap;
+import retrofit2.http.FormUrlEncoded;
+import retrofit2.http.POST;
 import web.tuhua.com.websocketapp.MsgBean;
 
 /**
@@ -14,6 +18,7 @@ public interface EntApi {
     String HOST = "http://push.mysise.org/";
 
 
-    @GET("/MsgPushCtrl/getHistoryPush")
-    Observable<FeedResult<PagerResult<MsgBean>>> getHistory();
+    @POST("/MsgPushCtrl/getHistoryPush")
+    @FormUrlEncoded
+    Observable<FeedResult<PagerResult<MsgBean>>> getHistory(@FieldMap Map<String, Object> params);
 }

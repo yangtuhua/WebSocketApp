@@ -15,6 +15,7 @@ import android.widget.Toast;
 
 import com.blankj.utilcode.util.LogUtils;
 import com.blankj.utilcode.util.TimeUtils;
+import com.blankj.utilcode.util.ToastUtils;
 import com.chad.library.adapter.base.BaseQuickAdapter;
 import com.chad.library.adapter.base.BaseViewHolder;
 import com.scwang.smartrefresh.layout.api.RefreshLayout;
@@ -27,7 +28,9 @@ import org.java_websocket.handshake.ServerHandshake;
 import java.net.URI;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.functions.Consumer;
@@ -49,16 +52,16 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     private static final int MAX_RECONNECT_COUNT = 5;//最多尝试重新连接5次
 
     private int tryConnectCount;//已经尝试连接的次数
-    private NotificationManager mNotificationManager;
     private RetrofitHelper retrofitHelper;
 
     private int currentPage = 1;
 
     private static final int pageSize = 15;
     private RecyclerView recyclerView;
-    private RefreshLayout refreshLayout;
     private boolean isRefresh;
     private long total;
+
+    private boolean closeByUser;//是否由用户关闭
 
 
     @Override
@@ -72,11 +75,12 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     private void getData() {
         initView();
 
-        connectToServer();
+        connectToServer(false);
 
         getHistory();
     }
 
+    /***权限获取*/
     @AfterPermissionGranted(REQUEST_GET_PERMISSION)
     private void getPermission() {
         String[] perms = new String[]{android.Manifest.permission.WRITE_EXTERNAL_STORAGE};
@@ -88,7 +92,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     }
 
     private void initView() {
-        refreshLayout = (RefreshLayout) findViewById(R.id.refreshLayout);
+        RefreshLayout refreshLayout = (RefreshLayout) findViewById(R.id.refreshLayout);
         recyclerView = (RecyclerView) findViewById(R.id.recyclerview);
         refreshLayout.setOnRefreshListener(new OnRefreshListener() {
             @Override
@@ -119,7 +123,10 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
             retrofitHelper = WSApplication.getApplicationComponent().getRetrofitHelper();
         }
 
-        retrofitHelper.getHistory().subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).subscribe(new Consumer<FeedResult<PagerResult<MsgBean>>>() {
+        Map<String, Object> params = new HashMap<>();
+        params.put("pageSize", pageSize);
+        params.put("pages", currentPage);
+        retrofitHelper.getHistory(params).subscribeOn(Schedulers.io()).observeOn(AndroidSchedulers.mainThread()).subscribe(new Consumer<FeedResult<PagerResult<MsgBean>>>() {
             @Override
             public void accept(FeedResult<PagerResult<MsgBean>> pagerResultFeedResult) throws Exception {
                 total = pagerResultFeedResult.getResult().getTotalRow();
@@ -170,20 +177,39 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case R.id.menu_connect:
-
+                if (webSocketClient != null) {
+                    if (webSocketClient.isConnecting()) {
+                        ToastUtils.showLong("您已经连接了服务器！");
+                        return true;
+                    } else {
+                        connectToServer(false);
+                    }
+                } else {
+                    connectToServer(false);
+                }
                 break;
             case R.id.menu_disconnect:
+                if (webSocketClient != null) {
+                    closeByUser = true;
+                    webSocketClient.close();
+                }
                 break;
         }
         return true;
     }
 
     /***连接到服务器*/
-    private void connectToServer() {
+    private void connectToServer(boolean isTryReconnect) {
+        if (webSocketClient != null && webSocketClient.isConnecting() && isTryReconnect) {
+            webSocketClient.close();
+            webSocketClient = null;
+        }
         webSocketClient = new WebSocketClient(URI.create("ws://push.mysise.org/websocket")) {
             @Override
             public void onOpen(ServerHandshake serverHandshake) {
                 Log.e("info", "连接成功...");
+                closeByUser = false;
+                tryConnectCount = 0;
                 isConnected = true;
             }
 
@@ -198,12 +224,11 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
                 isConnected = false;
                 Log.e("info", "连接关闭！");
 
-                //尝试重新连接
-//                if (tryConnectCount <= MAX_RECONNECT_COUNT && !isConnected) {
-//                    tryConnectCount++;
-//                    Toast.makeText(MainActivity.this, "尝试第" + tryConnectCount + "次重新连接", Toast.LENGTH_LONG).show();
-//                    webSocketClient.connect();
-//                }
+                //TODO 重新连接
+                if (tryConnectCount <= MAX_RECONNECT_COUNT && !closeByUser) {
+                    tryConnectCount++;
+                    connectToServer(true);
+                }
             }
 
             @Override
@@ -217,7 +242,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
 
     /***将消息推送至通知栏*/
     private void pushMsgToStatusBar(String msg) {
-        mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         // 创建一个新的Notification对象，并添加图标
         Notification n = new Notification();
         n.icon = R.mipmap.ic_launcher;
