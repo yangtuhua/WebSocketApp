@@ -1,10 +1,10 @@
 package web.tuhua.com.websocketapp;
 
-import android.app.Notification;
 import android.app.NotificationManager;
 import android.content.Context;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
+import android.support.v7.app.NotificationCompat;
 import android.support.v7.widget.DividerItemDecoration;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -208,27 +208,46 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
             @Override
             public void onOpen(ServerHandshake serverHandshake) {
                 Log.e("info", "连接成功...");
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        ToastUtils.showLong("连接成功");
+                    }
+                });
                 closeByUser = false;
                 tryConnectCount = 0;
                 isConnected = true;
             }
 
             @Override
-            public void onMessage(String s) {
+            public void onMessage(final String s) {
                 LogUtils.e("收到消息：" + s);
-                pushMsgToStatusBar(s);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        pushMsgToStatusBar(s);
+                        isRefresh = true;
+                        getHistory();
+                    }
+                });
             }
 
             @Override
             public void onClose(int i, String s, boolean b) {
                 isConnected = false;
                 Log.e("info", "连接关闭！");
-
                 //TODO 重新连接
-                if (tryConnectCount <= MAX_RECONNECT_COUNT && !closeByUser) {
-                    tryConnectCount++;
-                    connectToServer(true);
-                }
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        ToastUtils.showLong("连接断开");
+                        if (tryConnectCount <= MAX_RECONNECT_COUNT && !closeByUser) {
+                            tryConnectCount++;
+                            ToastUtils.showLong("尝试第" + tryConnectCount + "次连接");
+                            connectToServer(true);
+                        }
+                    }
+                });
             }
 
             @Override
@@ -244,15 +263,13 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     private void pushMsgToStatusBar(String msg) {
         NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         // 创建一个新的Notification对象，并添加图标
-        Notification n = new Notification();
-        n.icon = R.mipmap.ic_launcher;
-        n.tickerText = msg;
-        n.when = System.currentTimeMillis();
-        //n.flags=Notification.FLAG_ONGOING_EVENT;
-//        Intent intent = new Intent(context, SendNotification.class);
-//        PendingIntent pi = PendingIntent.getActivity(context, 0, intent, 0);
-//        n.setLatestEventInfo(context, "title", "content", pi);
-        mNotificationManager.notify(1, n);
+        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this);
+        mBuilder.mContentTitle = "新消息";
+        mBuilder.mContentText = msg;
+        mBuilder.setSmallIcon(R.mipmap.ic_msg);
+        mBuilder.setWhen(System.currentTimeMillis());
+
+        mNotificationManager.notify(1, mBuilder.build());
     }
 
     @Override

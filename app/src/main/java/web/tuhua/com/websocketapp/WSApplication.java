@@ -4,8 +4,6 @@ import android.app.Application;
 import android.content.Context;
 import android.support.annotation.NonNull;
 
-import com.activeandroid.ActiveAndroid;
-import com.activeandroid.Configuration;
 import com.blankj.utilcode.util.Utils;
 import com.scwang.smartrefresh.layout.SmartRefreshLayout;
 import com.scwang.smartrefresh.layout.api.DefaultRefreshFooterCreater;
@@ -20,7 +18,6 @@ import com.scwang.smartrefresh.layout.header.ClassicsHeader;
 import web.tuhua.com.websocketapp.dagger.component.ApplicationComponent;
 import web.tuhua.com.websocketapp.dagger.component.DaggerApplicationComponent;
 import web.tuhua.com.websocketapp.dagger.module.ApplicationModule;
-import web.tuhua.com.websocketapp.db.PushMsgTab;
 
 /**
  * Created by yangtufa on 2017/10/14.
@@ -28,16 +25,13 @@ import web.tuhua.com.websocketapp.db.PushMsgTab;
 
 public class WSApplication extends Application {
 
-    private static boolean IS_DATABASE_LOGGING_ENABLED = false;
     private static WSApplication mInstance;
-
 
     @Override
     public void onCreate() {
         super.onCreate();
 
         mInstance = this;
-//        initActiveAndroid();
 
         Utils.init(this);
     }
@@ -59,17 +53,6 @@ public class WSApplication extends Application {
                 return new ClassicsFooter(context).setSpinnerStyle(SpinnerStyle.Translate);
             }
         });
-    }
-
-    /***初始化activeAndroid数据库框架*/
-    private void initActiveAndroid() {
-        if (BuildConfig.DEBUG) {
-            IS_DATABASE_LOGGING_ENABLED = true;
-        }
-        Configuration.Builder configurationBuilder = new Configuration.Builder(this);
-        //TODO 注:所有新增的表,都需要在此处注册
-        configurationBuilder.addModelClasses(PushMsgTab.class);
-        ActiveAndroid.initialize(configurationBuilder.create(), IS_DATABASE_LOGGING_ENABLED);
     }
 
     /****向外提供获取 {@link ApplicationComponent}的方法*/
