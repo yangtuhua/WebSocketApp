@@ -2,7 +2,6 @@ package web.tuhua.com.websocketapp.dagger.module;
 
 import android.support.annotation.NonNull;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.InetAddress;
 import java.net.Socket;
@@ -10,7 +9,6 @@ import java.security.GeneralSecurityException;
 import java.security.KeyManagementException;
 import java.security.KeyStore;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
@@ -26,7 +24,6 @@ import javax.net.ssl.X509TrustManager;
 import dagger.Module;
 import dagger.Provides;
 import okhttp3.CipherSuite;
-import okhttp3.ConnectionSpec;
 import okhttp3.Cookie;
 import okhttp3.CookieJar;
 import okhttp3.HttpUrl;
@@ -40,6 +37,7 @@ import web.tuhua.com.websocketapp.dagger.qualifiter.EntUrl;
 import web.tuhua.com.websocketapp.http.CookieHolder;
 import web.tuhua.com.websocketapp.http.EntApi;
 import web.tuhua.com.websocketapp.http.HttpConfig;
+import web.tuhua.com.websocketapp.http.ParamsInterceptor;
 
 /**
  * 网络请求模块的module
@@ -84,7 +82,16 @@ public class HttpModule {
         }
 
         //缓存
-        File cacheFile = new File(HttpConfig.DEFAULT_REQUEST_CACHE_PATH);
+//        File cacheFile = new File(HttpConfig.DEFAULT_REQUEST_CACHE_PATH);
+//        final Cache cache = new Cache(cacheFile, HttpConfig.MAX_CACHE_SIZE);
+//        HttpCacheInterceptor cacheInterceptor = new HttpCacheInterceptor();
+//        builder.cache(cache);
+//
+//        builder.interceptors().add(cacheInterceptor);//添加本地缓存拦截器，用来拦截本地缓存
+//        builder.addNetworkInterceptor(cacheInterceptor);
+//        builder.networkInterceptors().add(cacheInterceptor);//添加网络拦截器，用来拦截网络数据
+        builder.addInterceptor(new ParamsInterceptor());//自定义拦截器,用于添加功能参数requestType = app
+
         //cookie持久化
         builder.cookieJar(new CookieJar() {
             @Override
@@ -130,17 +137,17 @@ public class HttpModule {
 //        } catch (GeneralSecurityException e) {
 //            e.printStackTrace();
 //        }
-        if (EntApi.HOST.startsWith("https://")) {
-            ConnectionSpec specTLS1_2 = new ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS)
-                    .cipherSuites(CipherSuite.TLS_DHE_RSA_WITH_AES_128_GCM_SHA256)
-                    .build();
-            ConnectionSpec specTLSAll = new ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS)
-                    .build();
-            List<ConnectionSpec> specs = new ArrayList<>();
-            specs.add(specTLS1_2);
-            specs.add(specTLSAll);
-            builder.connectionSpecs(specs);
-        }
+//        if (EntApi.HOST.startsWith("https://")) {
+//            ConnectionSpec specTLS1_2 = new ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS)
+//                    .cipherSuites(CipherSuite.TLS_DHE_RSA_WITH_AES_128_GCM_SHA256)
+//                    .build();
+//            ConnectionSpec specTLSAll = new ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS)
+//                    .build();
+//            List<ConnectionSpec> specs = new ArrayList<>();
+//            specs.add(specTLS1_2);
+//            specs.add(specTLSAll);
+//            builder.connectionSpecs(specs);
+//        }
         return builder.build();
     }
 

@@ -2,7 +2,7 @@ package web.tuhua.com.websocketapp.http;
 
 
 import io.reactivex.Observable;
-import retrofit2.http.POST;
+import retrofit2.http.GET;
 import web.tuhua.com.websocketapp.MsgBean;
 
 /**
@@ -11,9 +11,9 @@ import web.tuhua.com.websocketapp.MsgBean;
  */
 
 public interface EntApi {
-    String HOST = "http://push.mysise.org";
+    String HOST = "http://push.mysise.org/";
 
 
-    @POST("/MsgPushCtrl/getHistoryPush")
+    @GET("/MsgPushCtrl/getHistoryPush")
     Observable<FeedResult<PagerResult<MsgBean>>> getHistory();
 }

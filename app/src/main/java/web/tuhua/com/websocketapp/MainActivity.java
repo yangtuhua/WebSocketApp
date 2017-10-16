@@ -32,13 +32,16 @@ import java.util.List;
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.functions.Consumer;
 import io.reactivex.schedulers.Schedulers;
+import pub.devrel.easypermissions.AfterPermissionGranted;
+import pub.devrel.easypermissions.EasyPermissions;
 import web.tuhua.com.websocketapp.http.FeedResult;
 import web.tuhua.com.websocketapp.http.PagerResult;
 import web.tuhua.com.websocketapp.http.RetrofitHelper;
 
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements EasyPermissions.PermissionCallbacks {
 
+    private static final int REQUEST_GET_PERMISSION = 100;
     private WebSocketClient webSocketClient;
 
     private boolean isConnected;//是否已经连接
@@ -63,11 +66,25 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        getPermission();
+    }
+
+    private void getData() {
         initView();
 
         connectToServer();
 
-        getHistory();
+//        getHistory();
+    }
+
+    @AfterPermissionGranted(REQUEST_GET_PERMISSION)
+    private void getPermission() {
+        String[] perms = new String[]{android.Manifest.permission.WRITE_EXTERNAL_STORAGE};
+        if (EasyPermissions.hasPermissions(this, perms)) {
+            getData();
+        } else {
+            EasyPermissions.requestPermissions(this, "为了保证正常使用，请允许应用获取相应的权限", REQUEST_GET_PERMISSION, perms);
+        }
     }
 
     private void initView() {
@@ -172,6 +189,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onMessage(String s) {
+                LogUtils.e("收到消息：" + s);
                 pushMsgToStatusBar(s);
             }
 
@@ -181,11 +199,11 @@ public class MainActivity extends AppCompatActivity {
                 Log.e("info", "连接关闭！");
 
                 //尝试重新连接
-                if (tryConnectCount <= MAX_RECONNECT_COUNT && !isConnected) {
-                    tryConnectCount++;
-                    Toast.makeText(MainActivity.this, "尝试第" + tryConnectCount + "次重新连接", Toast.LENGTH_LONG).show();
-                    webSocketClient.connect();
-                }
+//                if (tryConnectCount <= MAX_RECONNECT_COUNT && !isConnected) {
+//                    tryConnectCount++;
+//                    Toast.makeText(MainActivity.this, "尝试第" + tryConnectCount + "次重新连接", Toast.LENGTH_LONG).show();
+//                    webSocketClient.connect();
+//                }
             }
 
             @Override
@@ -210,5 +228,15 @@ public class MainActivity extends AppCompatActivity {
 //        PendingIntent pi = PendingIntent.getActivity(context, 0, intent, 0);
 //        n.setLatestEventInfo(context, "title", "content", pi);
         mNotificationManager.notify(1, n);
+    }
+
+    @Override
+    public void onPermissionsGranted(int i, List<String> list) {
+        getData();
+    }
+
+    @Override
+    public void onPermissionsDenied(int i, List<String> list) {
+
     }
 }
