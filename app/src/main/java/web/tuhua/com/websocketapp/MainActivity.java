@@ -1,8 +1,12 @@
 package web.tuhua.com.websocketapp;
 
+import android.Manifest;
 import android.app.NotificationManager;
 import android.content.Context;
+import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.app.NotificationCompat;
 import android.support.v7.widget.DividerItemDecoration;
@@ -11,6 +15,7 @@ import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.Toast;
 
 import com.blankj.utilcode.util.LogUtils;
@@ -31,6 +36,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import io.reactivex.android.schedulers.AndroidSchedulers;
 import io.reactivex.functions.Consumer;
@@ -69,15 +75,17 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        getPermission();
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            getPermission();
+        } else {
+            getData();
+        }
     }
 
     private void getData() {
         initView();
 
         connectToServer(false);
-
-        getHistory();
     }
 
     /***权限获取*/
@@ -93,6 +101,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
 
     private void initView() {
         RefreshLayout refreshLayout = (RefreshLayout) findViewById(R.id.refreshLayout);
+        refreshLayout.autoRefresh();
         recyclerView = (RecyclerView) findViewById(R.id.recyclerview);
         refreshLayout.setOnRefreshListener(new OnRefreshListener() {
             @Override
@@ -148,11 +157,20 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         if (commonAdapter == null) {
             commonAdapter = new BaseQuickAdapter<MsgBean, BaseViewHolder>(R.layout.item_msg, list) {
                 @Override
-                protected void convert(BaseViewHolder baseViewHolder, MsgBean msgBean) {
+                protected void convert(BaseViewHolder baseViewHolder, final MsgBean msgBean) {
                     baseViewHolder.setText(R.id.tv_content, msgBean.getMsg());
 
                     String dateStr = TimeUtils.date2String(new Date(msgBean.getCreat_time()), new SimpleDateFormat("MM-dd HH:mm"));
                     baseViewHolder.setText(R.id.tv_time, dateStr);
+                    baseViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            //详情
+                            Intent intent = new Intent(MainActivity.this, MsgDetailActivity.class);
+                            intent.putExtra(MsgDetailActivity.MSG_CONTENT, msgBean.getMsg());
+                            startActivity(intent);
+                        }
+                    });
                 }
             };
             recyclerView.setAdapter(commonAdapter);
@@ -269,16 +287,26 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         mBuilder.setSmallIcon(R.mipmap.ic_msg);
         mBuilder.setWhen(System.currentTimeMillis());
 
-        mNotificationManager.notify(1, mBuilder.build());
+
+        mNotificationManager.notify(new Random(100000).nextInt(), mBuilder.build());
     }
 
     @Override
     public void onPermissionsGranted(int i, List<String> list) {
-        getData();
+        if (i == REQUEST_GET_PERMISSION && list.contains(Manifest.permission.WRITE_EXTERNAL_STORAGE)) {
+            getData();
+        }
     }
 
     @Override
     public void onPermissionsDenied(int i, List<String> list) {
 
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+
+        EasyPermissions.onRequestPermissionsResult(requestCode, permissions, grantResults, this);
     }
 }
