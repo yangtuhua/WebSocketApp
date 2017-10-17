@@ -2,6 +2,7 @@ package web.tuhua.com.websocketapp;
 
 import android.Manifest;
 import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
@@ -51,6 +52,7 @@ import web.tuhua.com.websocketapp.http.RetrofitHelper;
 public class MainActivity extends AppCompatActivity implements EasyPermissions.PermissionCallbacks {
 
     private static final int REQUEST_GET_PERMISSION = 100;
+    private static final int REQUEST_CODE_TO_DETAIL = 111;
     private WebSocketClient webSocketClient;
 
     private boolean isConnected;//是否已经连接
@@ -68,6 +70,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
     private long total;
 
     private boolean closeByUser;//是否由用户关闭
+    private NotificationManager mNotificationManager;
 
 
     @Override
@@ -279,7 +282,7 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
 
     /***将消息推送至通知栏*/
     private void pushMsgToStatusBar(String msg) {
-        NotificationManager mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        mNotificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
         // 创建一个新的Notification对象，并添加图标
         NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(this);
         mBuilder.mContentTitle = "新消息";
@@ -287,8 +290,17 @@ public class MainActivity extends AppCompatActivity implements EasyPermissions.P
         mBuilder.setSmallIcon(R.mipmap.ic_msg);
         mBuilder.setWhen(System.currentTimeMillis());
 
+        Intent intent = new Intent(this, MsgDetailActivity.class);
+        intent.putExtra(MsgDetailActivity.MSG_CONTENT, msg);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, REQUEST_CODE_TO_DETAIL, intent, PendingIntent.FLAG_UPDATE_CURRENT);
+        mBuilder.setContentIntent(pendingIntent);
 
-        mNotificationManager.notify(new Random(100000).nextInt(), mBuilder.build());
+        int max = 10000;
+        int min = 1;
+        Random random = new Random();
+        int randomNum = random.nextInt(max) % (max - min + 1) + min;
+        LogUtils.e("通知的id：" + randomNum);
+        mNotificationManager.notify(randomNum, mBuilder.build());
     }
 
     @Override
